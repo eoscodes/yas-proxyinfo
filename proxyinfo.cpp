@@ -11,19 +11,16 @@ class proxyinfo_contract : public eosio::contract {
         /**
          *  Set proxy info
          *
-         *  @param proxy - the proxy account name
+         *  @param owner - the proxy account name
          *  @param name - human readable name
          *  @param slogan - a short description
          *  @param philosophy - voting philosophy
          *  @param background - optional. who is the proxy?
          *  @param website - optional. url to website
-         *  @param logo_256 - optional. url to an image with the size of 256 x 256 px
-         *  @param telegram - optional. telegram account name
-         *  @param steemit - optional. steemit account name
-         *  @param twitter - optional. twitter account name
-         *  @param wechat - optional. wechat account name
+         *  @param logo - optional. url to an image with the size of 256 x 256 px
+         *  @param contact - optional. contact 
          */
-        void set(const account_name proxy, std::string name, std::string slogan, std::string philosophy, std::string background, std::string website, std::string logo_256, std::string telegram, std::string steemit, std::string twitter, std::string wechat) {
+        void set(const account_name owner, std::string name, std::string slogan, std::string philosophy, std::string background, std::string website, std::string logo, std::string contact) {
             // Validate input
             eosio_assert(!name.empty(), "name required");
             eosio_assert(name.length() <= 64, "name too long");
@@ -39,52 +36,43 @@ class proxyinfo_contract : public eosio::contract {
                 eosio_assert(website.substr(0, 4) == "http", "website should begin with http");
             }
 
-            eosio_assert(logo_256.length() <= 256, "logo_256 too long");
-            if (!logo_256.empty()) {
-                eosio_assert(logo_256.substr(0, 4) == "http", "logo_256 should begin with http");
+            eosio_assert(logo.length() <= 256, "logo too long");
+            if (!logo.empty()) {
+                eosio_assert(logo.substr(0, 4) == "http", "logo should begin with http");
             }
 
-            eosio_assert(telegram.length() <= 64, "telegram too long");
-            eosio_assert(steemit.length() <= 64, "steemit too long");
-            eosio_assert(twitter.length() <= 64, "twitter too long");
-            eosio_assert(wechat.length() <= 64, "wechat too long");
+            eosio_assert(contact.length() <= 64, "telegram too long");
 
             // Require auth from the proxy account
-            require_auth(proxy);
+            require_auth(owner);
 
             // Check if exists
-            auto current = proxies.find(proxy);
+            auto current = proxies.find(owner);
 
             // Update
             if (current != proxies.end()) {
-                proxies.modify(current, proxy, [&]( auto& i ) {
-                    i.owner = proxy;
+                proxies.modify(current, owner, [&]( auto& i ) {
+                    i.owner = owner;
                     i.name = name;
                     i.website = website;
                     i.slogan = slogan;
                     i.philosophy = philosophy;
                     i.background = background;
-                    i.logo_256 = logo_256;
-                    i.telegram = telegram;
-                    i.steemit = steemit;
-                    i.twitter = twitter;
-                    i.wechat = wechat;
+                    i.logo = logo;
+                    i.contact = contact;
                 });
 
             // Insert
             } else {
-                proxies.emplace(proxy, [&]( auto& i ) {
-                    i.owner = proxy;
+                proxies.emplace(owner, [&]( auto& i ) {
+                    i.owner = owner;
                     i.name = name;
                     i.website = website;
                     i.slogan = slogan;
                     i.philosophy = philosophy;
                     i.background = background;
-                    i.logo_256 = logo_256;
-                    i.telegram = telegram;
-                    i.steemit = steemit;
-                    i.twitter = twitter;
-                    i.wechat = wechat;
+                    i.logo = logo;
+                    i.contact = contact;
                 });
             }
         }
@@ -94,12 +82,12 @@ class proxyinfo_contract : public eosio::contract {
          *
          * @param proxy - the proxy account name.
          */
-        void remove(const account_name proxy) {
+        void remove(const account_name owner) {
             // Require auth from the proxy account
-            require_auth(proxy);
+            require_auth(owner);
 
             // Delete record
-            auto lookup = proxies.find(proxy);
+            auto lookup = proxies.find(owner);
             if (lookup != proxies.end()) {
                 proxies.erase(lookup);
             }
@@ -139,14 +127,11 @@ class proxyinfo_contract : public eosio::contract {
             std::string slogan;
             std::string philosophy;
             std::string background;
-            std::string logo_256;
-            std::string telegram;
-            std::string steemit;
-            std::string twitter;
-            std::string wechat;
+            std::string logo;
+            std::string contact;
 
             auto primary_key()const { return owner; }
-            EOSLIB_SERIALIZE(proxy, (owner)(name)(website)(slogan)(philosophy)(background)(logo_256)(telegram)(steemit)(twitter)(wechat))
+            EOSLIB_SERIALIZE(proxy, (owner)(name)(website)(slogan)(philosophy)(background)(logo)(contact))
         };
 
         typedef eosio::multi_index<N(proxies), proxy> proxy_table;
